@@ -19,22 +19,26 @@ function linear_backward(∂Z, lin_cache)
 end
 
 function lin_act_back(∂A, item)
-    ∂Z =  ∂A*Δ(item.func, item.act_cache)
+    ∂Z = ∂A*Δ(item.func, item.act_cache)
     linear_backward(∂Z, item.lin_cache)
 end
 
 function backpropagation(nn, Ŷ, Y, η)
     # Gradient
-    ∇ = Dict()
+    ∇ = Dict{Any, Float64}()
 
     Y = reshape(Y, size(Ŷ))
 
     # Partial derivative of the output layer
     ∂Ŷ = (-(Y ./ Ŷ) .+ ((1 .- Y) ./ ( 1 .- Ŷ)))
-    layer = get_cells(nn, :Output)
-    for item in layer
+    output = get_cells(nn, :Output)
+    layer = Set([keys(output)...])
+    for id in layer
+        item = nn.somas[id]
         A_prev, W, b = last(item.lin_cache)
-        ∇[W], ∇[b], ∇[A_prev] =  lin_act_back(∂Ŷ, item)
+        ∂W, ∂b, ∂A_prev = lin_act_back(∂Ŷ, item)
+        merge!(∇, ∂W, ∂b)
+        
     end
 
     # Calculate elements of the gradient
